@@ -4,9 +4,9 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 INTERVAL_SECONDS=21600  # 6 hours
 
-echo "=== VM Audit Monitor ==="
-echo "Running audit every 6 hours. First run starting now."
-echo "Reports stored in: $SCRIPT_DIR/reports/"
+echo "=== Claude Memory Audit ==="
+echo "Auditing conversations every 6 hours. First run starting now."
+echo "Reports: $SCRIPT_DIR/reports/"
 echo "PID: $$"
 echo ""
 

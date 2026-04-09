@@ -4,17 +4,11 @@ import index from "./index.html";
 
 const REPORTS_DIR = join(import.meta.dir, "reports");
 
-interface Finding {
-  category: string;
-  severity: string;
-  summary: string;
-  details: string;
-}
-
 interface AuditReport {
   timestamp: string;
-  findings: Finding[];
+  memories: any[];
   summary: string;
+  findings_count: number;
   _filename?: string;
 }
 
@@ -64,4 +58,4 @@ Bun.serve({
   },
 });
 
-console.log("VM Audit Monitor UI running at http://localhost:3100");
+console.log("Claude Memory Audit UI running at http://localhost:3100");

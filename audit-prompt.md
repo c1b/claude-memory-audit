@@ -1,35 +1,40 @@
-Review this VM for changes to state or non-git-tracked files since the last audit. Check:
+You are a conversation auditor. You are given chunks of Claude Code conversation history (JSONL format) from sessions across multiple projects on this VM.
 
-1. Recently modified files (last 6 hours) outside git repos:
-   find /home/adminuser -maxdepth 3 -mmin -360 -not -path '*/.git/*' -not -path '*/node_modules/*' -not -path '*/.venv/*' -not -path '*/__pycache__/*' -not -path '*/vm-audit-monitor/*' -type f 2>/dev/null
+Your job: identify **repeated errors, anti-patterns, and recurring hiccups** where Claude got stuck, looped, or made the same mistake multiple times. Focus on patterns that would benefit from a memory file so future Claude sessions avoid the same pitfalls.
 
-2. Uncommitted changes in all git repos under ~/Repos and ~/openclaw
+Examples of what to look for:
+- The same tool call failing repeatedly before Claude adjusts (e.g., wrong flags, missing deps)
+- Permissions/access errors that keep recurring (e.g., no sudo, port conflicts)
+- Configuration mistakes that get rediscovered each session
+- Approaches that fail predictably in this environment (e.g., installing packages without sudo)
+- Sandbox restrictions that block audit commands
+- Workarounds that were discovered but might be forgotten
 
-3. New or removed packages (check bash_history tail for apt/pip/npm/bun install)
+For each finding, output a memory file that should be created. Memory files are scoped to a specific project (based on the conversation's working directory) or to the global scope if the pattern applies everywhere.
 
-4. New processes or services (ps aux --sort=-start_time | head -20)
-
-5. Any new listening ports (ss -tlnp)
-
-6. Changes to shell config files (.bashrc, .profile, .zshrc)
-
-7. Changes to ~/.azure/, ~/.codex/, ~/.claude/ config files
-
-8. New or modified files in /tmp
-
-Output your findings as JSON with this exact structure (no markdown, no code fences, just raw JSON):
+Output your response as JSON with this exact structure (no markdown, no code fences, just raw JSON):
 
 {
   "timestamp": "<ISO 8601>",
-  "findings": [
+  "memories": [
     {
-      "category": "<files|git|packages|processes|ports|config|tmp>",
-      "severity": "<info|warning|critical>",
-      "summary": "<one line>",
-      "details": "<details>"
+      "project": "<project directory name from cwd, e.g. 'grafana-vm-monitor', or '_global' for VM-wide patterns>",
+      "filename": "<descriptive-kebab-case>.md",
+      "name": "<short memory name>",
+      "description": "<one-line description for the memory index>",
+      "type": "<feedback|project|reference>",
+      "content": "<full memory file body — lead with the rule/fact, then Why: and How to apply: lines>",
+      "evidence": "<brief quote or summary of the conversation evidence>"
     }
   ],
-  "summary": "<one paragraph overview>"
+  "summary": "<one paragraph overview of what was found>",
+  "findings_count": <number>
 }
 
-If nothing noteworthy changed, return an empty findings array with a summary saying so.
+Rules:
+- Only create memories for patterns you see REPEATED (2+ occurrences) or that caused significant wasted effort
+- Do NOT create memories for one-off errors that were quickly resolved
+- Do NOT create memories for things that are obvious from reading the code
+- Keep memory content actionable and concise
+- If nothing noteworthy is found, return an empty memories array
+- The "evidence" field should reference specific conversation details so the audit trail is clear

@@ -1,16 +1,20 @@
 import "./style.css";
 
-interface Finding {
-  category: string;
-  severity: string;
-  summary: string;
-  details: string;
+interface Memory {
+  project: string;
+  filename: string;
+  name: string;
+  description: string;
+  type: string;
+  content: string;
+  evidence: string;
 }
 
 interface AuditReport {
   timestamp: string;
-  findings: Finding[];
+  memories: Memory[];
   summary: string;
+  findings_count: number;
   _filename?: string;
 }
 
@@ -18,16 +22,6 @@ let reports: AuditReport[] = [];
 
 function esc(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-function severityBadge(findings: Finding[]): string {
-  if (!findings || findings.length === 0)
-    return '<span class="badge badge-clean">clean</span>';
-  if (findings.some((f) => f.severity === "critical"))
-    return '<span class="badge badge-critical">critical</span>';
-  if (findings.some((f) => f.severity === "warning"))
-    return '<span class="badge badge-warning">warning</span>';
-  return '<span class="badge badge-info">info</span>';
 }
 
 function formatTime(ts: string): string {
@@ -39,33 +33,25 @@ function formatTime(ts: string): string {
 }
 
 (window as any).toggle = function toggle(idx: number) {
-  document.getElementById("findings-" + idx)?.classList.toggle("open");
+  document.getElementById("memories-" + idx)?.classList.toggle("open");
 };
 
 function render() {
   const statsEl = document.getElementById("stats")!;
   const reportsEl = document.getElementById("reports")!;
 
-  const totalFindings = reports.reduce(
-    (s, r) => s + (r.findings?.length || 0),
+  const totalMemories = reports.reduce(
+    (s, r) => s + (r.memories?.length || 0),
     0
   );
-  const criticals = reports.reduce(
-    (s, r) =>
-      s + (r.findings?.filter((f) => f.severity === "critical").length || 0),
-    0
-  );
-  const warnings = reports.reduce(
-    (s, r) =>
-      s + (r.findings?.filter((f) => f.severity === "warning").length || 0),
-    0
+  const projects = new Set(
+    reports.flatMap((r) => (r.memories || []).map((m) => m.project))
   );
 
   statsEl.innerHTML = [
-    { value: reports.length, label: "Total Audits", color: "#5bc0de" },
-    { value: totalFindings, label: "Total Findings", color: "#f0ad4e" },
-    { value: criticals, label: "Critical", color: "#d9534f" },
-    { value: warnings, label: "Warnings", color: "#f0ad4e" },
+    { value: reports.length, label: "Audits Run", color: "#5bc0de" },
+    { value: totalMemories, label: "Memories Created", color: "#f0ad4e" },
+    { value: projects.size, label: "Projects Covered", color: "#5cb85c" },
   ]
     .map(
       (s) =>
@@ -81,14 +67,39 @@ function render() {
 
   reportsEl.innerHTML = reports
     .map((r, i) => {
-      const findingsHtml = (r.findings || [])
+      const memoriesHtml = (r.memories || [])
         .map(
-          (f) =>
-            `<div class="finding"><div class="finding-header"><span class="finding-cat">${esc(f.category)}</span><span class="badge badge-${f.severity}">${esc(f.severity)}</span><span class="finding-summary">${esc(f.summary || "")}</span></div>${f.details ? `<div class="finding-details">${esc(f.details)}</div>` : ""}</div>`
+          (m) =>
+            `<div class="finding">
+              <div class="finding-header">
+                <span class="finding-cat">${esc(m.project)}</span>
+                <span class="badge badge-${m.type === "feedback" ? "warning" : "info"}">${esc(m.type)}</span>
+                <span class="finding-summary">${esc(m.name)}</span>
+              </div>
+              <div class="finding-details">${esc(m.content)}</div>
+              ${m.evidence ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #2a2a35;font-size:0.75rem;color:#666">Evidence: ${esc(m.evidence)}</div>` : ""}
+            </div>`
         )
         .join("");
 
-      return `<div class="report"><div class="report-header" onclick="toggle(${i})"><div><div class="report-time">${formatTime(r.timestamp)}</div><div class="report-summary">${esc(r.summary || "")}</div></div><div class="badges">${severityBadge(r.findings)} <span style="color:#555;font-size:0.8rem">${r.findings?.length || 0} findings</span></div></div><div class="findings" id="findings-${i}">${findingsHtml || '<div style="color:#555;padding:8px">No findings</div>'}</div></div>`;
+      const count = r.memories?.length || 0;
+      const badge =
+        count === 0
+          ? '<span class="badge badge-clean">clean</span>'
+          : `<span class="badge badge-warning">${count} memories</span>`;
+
+      return `<div class="report">
+        <div class="report-header" onclick="toggle(${i})">
+          <div>
+            <div class="report-time">${formatTime(r.timestamp)}</div>
+            <div class="report-summary">${esc(r.summary || "")}</div>
+          </div>
+          <div class="badges">${badge}</div>
+        </div>
+        <div class="findings" id="memories-${i}">
+          ${memoriesHtml || '<div style="color:#555;padding:8px">No patterns found</div>'}
+        </div>
+      </div>`;
     })
     .join("");
 }
