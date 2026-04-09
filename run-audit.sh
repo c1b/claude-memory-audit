@@ -26,16 +26,22 @@ fi
 
 echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Found $UNSEEN_LINES unseen conversation lines across projects."
 
-# Step 2: Build the prompt with conversation data appended
-PROMPT=$(cat "$SCRIPT_DIR/audit-prompt.md")
-FULL_PROMPT="$PROMPT
+# Step 2: Write prompt + conversation data to a temp file (avoids shell arg size limits)
+TMPFILE=$(mktemp /tmp/claude-audit-XXXXXX.txt)
+cat "$SCRIPT_DIR/audit-prompt.md" > "$TMPFILE"
+echo "" >> "$TMPFILE"
+echo "--- BEGIN CONVERSATION HISTORY ---" >> "$TMPFILE"
+# Cap at ~200KB to stay within reasonable context limits
+echo "$UNSEEN" | head -c 200000 >> "$TMPFILE" || true
+echo "" >> "$TMPFILE"
+echo "--- END CONVERSATION HISTORY ---" >> "$TMPFILE"
 
---- BEGIN CONVERSATION HISTORY ---
-$UNSEEN
---- END CONVERSATION HISTORY ---"
+PROMPT_SIZE=$(wc -c < "$TMPFILE")
+echo "[$(date -u +%Y-%m-%dT%H:%M:%SZ)] Prompt size: ${PROMPT_SIZE} bytes"
 
 # Step 3: Run claude to analyze (use home dir as cwd so it has broad file access)
-RAW=$(cd "$HOME" && claude --output-format text -p "$FULL_PROMPT" 2>/dev/null || true)
+RAW=$(cd "$HOME" && cat "$TMPFILE" | claude --output-format text -p - 2>/dev/null || true)
+rm -f "$TMPFILE"
 
 # Step 4: Parse JSON response
 JSON=$(echo "$RAW" | python3 -c "
