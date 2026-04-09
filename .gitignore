@@ -4,3 +4,6 @@ reports/
 *.tsbuildinfo
 .cache
 .DS_Store
+
+state.json
+.trigger-run

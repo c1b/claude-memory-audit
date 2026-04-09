@@ -3,24 +3,18 @@ import { join } from "path";
 import index from "./index.html";
 
 const REPORTS_DIR = join(import.meta.dir, "reports");
+const STATE_FILE = join(import.meta.dir, "state.json");
+const TRIGGER_FILE = join(import.meta.dir, ".trigger-run");
 
-interface AuditReport {
-  timestamp: string;
-  memories: any[];
-  summary: string;
-  findings_count: number;
-  _filename?: string;
-}
-
-async function loadReports(): Promise<AuditReport[]> {
+async function loadReports() {
   try {
     const files = await readdir(REPORTS_DIR);
     const jsonFiles = files.filter((f) => f.endsWith(".json")).sort().reverse();
-    const reports: AuditReport[] = [];
+    const reports = [];
     for (const file of jsonFiles) {
       try {
         const raw = await Bun.file(join(REPORTS_DIR, file)).text();
-        const report = JSON.parse(raw) as AuditReport;
+        const report = JSON.parse(raw);
         report._filename = file;
         reports.push(report);
       } catch {}
@@ -31,13 +25,25 @@ async function loadReports(): Promise<AuditReport[]> {
   }
 }
 
+async function loadState() {
+  try {
+    return JSON.parse(await Bun.file(STATE_FILE).text());
+  } catch {
+    return { status: "unknown" };
+  }
+}
+
 Bun.serve({
   port: 3100,
   routes: {
     "/": index,
-    "/api/reports": async () => {
-      const reports = await loadReports();
-      return Response.json(reports);
+    "/api/reports": async () => Response.json(await loadReports()),
+    "/api/state": async () => Response.json(await loadState()),
+    "/api/trigger": {
+      POST: async () => {
+        await Bun.write(TRIGGER_FILE, new Date().toISOString());
+        return Response.json({ triggered: true });
+      },
     },
     "/api/reports/:filename": async (req) => {
       const filename = req.params.filename;

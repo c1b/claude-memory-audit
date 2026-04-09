@@ -8,17 +8,26 @@
 </head>
 <body>
   <div class="container">
-    <div class="header-row">
-      <div>
-        <h1>Claude Memory Audit</h1>
-        <div class="subtitle">Finds repeated errors in Claude conversations and writes memory files to prevent them</div>
-      </div>
-      <div style="text-align:right">
-        <button class="refresh-btn" onclick="load()">Refresh</button>
-        <div class="auto-refresh">Auto-refreshes every 60s</div>
-      </div>
+    <div class="header">
+      <h1>Claude Memory Audit</h1>
+      <div class="subtitle">Analyzes Claude conversation history for repeated errors and writes memory files to prevent them</div>
     </div>
+
+    <div class="scheduler-bar" id="scheduler-bar">
+      <div class="scheduler-status">
+        <div class="status-dot" id="status-dot"></div>
+        <div class="status-text" id="status-text">Loading...</div>
+      </div>
+      <div class="countdown" id="countdown"></div>
+      <button class="run-btn" id="run-btn" onclick="triggerRun()">Run Now</button>
+    </div>
+
     <div class="stats" id="stats"></div>
+
+    <div class="section-header">
+      <div class="section-title">Audit History</div>
+      <a class="refresh-link" onclick="load()">Refresh</a>
+    </div>
     <div id="reports"></div>
   </div>
   <script type="module" src="./frontend.ts"></script>
