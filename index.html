@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VM Audit Monitor</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header-row">
+      <div>
+        <h1>VM Audit Monitor</h1>
+        <div class="subtitle">Automated 6-hour VM state audits via Claude</div>
+      </div>
+      <div style="text-align:right">
+        <button class="refresh-btn" onclick="load()">Refresh</button>
+        <div class="auto-refresh">Auto-refreshes every 60s</div>
+      </div>
+    </div>
+    <div class="stats" id="stats"></div>
+    <div id="reports"></div>
+  </div>
+  <script type="module" src="./frontend.ts"></script>
+</body>
+</html>
